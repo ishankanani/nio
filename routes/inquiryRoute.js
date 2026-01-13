@@ -1,22 +1,29 @@
 import express from "express";
 import {
   createInquiry,
-  getInquiryList,
-  updateInquiryStatus,
-  getInquiryStats,
-  getTodayFollowUps,
-  getPendingFollowUps,
+  listInquiries,
+  updateInquiry,
+  getStats,
+  todayFollowUps,
+  pendingFollowUps,
 } from "../controllers/inquiryController.js";
 
 const router = express.Router();
 
+/* CREATE */
 router.post("/create", createInquiry);
-router.get("/list", getInquiryList);
-router.get("/stats", getInquiryStats);
-router.put("/update/:id", updateInquiryStatus);
 
-// FOLLOW-UP ROUTES (ADMIN PAGES)
-router.get("/followup/today", getTodayFollowUps);
-router.get("/followup/pending", getPendingFollowUps);
+/* LIST (ALL STAGES + FILTERS) */
+router.get("/list", listInquiries);
+
+/* UPDATE STATUS / FOLLOWUP */
+router.put("/update/:id", updateInquiry);
+
+/* DASHBOARD */
+router.get("/stats", getStats);
+
+/* REMINDERS */
+router.get("/followup/today", todayFollowUps);
+router.get("/followup/pending", pendingFollowUps);
 
 export default router;
