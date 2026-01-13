@@ -68,7 +68,6 @@ export const updateInquiryStatus = async (req, res) => {
   }
 };
 
-
 /**
  * DASHBOARD STATS
  * /api/inquiry/stats
@@ -112,31 +111,6 @@ export const markSeen = async (req, res) => {
     console.error("markSeen error:", error);
     res.json({ success: false, message: error.message });
   }
-};
-export const getTodayFollowUps = async (req, res) => {
-  const today = new Date();
-  today.setHours(0, 0, 0, 0);
-
-  const tomorrow = new Date(today);
-  tomorrow.setDate(today.getDate() + 1);
-
-  const inquiries = await InquiryModel.find({
-    followUpDate: { $gte: today, $lt: tomorrow },
-  });
-
-  res.json({ success: true, inquiries });
-};
-
-export const getPendingFollowUps = async (req, res) => {
-  const today = new Date();
-  today.setHours(0, 0, 0, 0);
-
-  const inquiries = await InquiryModel.find({
-    followUpDate: { $lt: today },
-    status: { $ne: "won" },
-  });
-
-  res.json({ success: true, inquiries });
 };
 export const getTodayFollowUps = async (req, res) => {
   const today = new Date();
