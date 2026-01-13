@@ -8,32 +8,60 @@ import userRouter from "./routes/userRoute.js";
 import productRouter from "./routes/productRoute.js";
 import inquiryRouter from "./routes/inquiryRoute.js";
 
-// Load environment variables
+/* -------------------------------------------------------------------------- */
+/* 🔹 ENV SETUP */
+/* -------------------------------------------------------------------------- */
 dotenv.config();
 
-// App configuration
+/* -------------------------------------------------------------------------- */
+/* 🔹 APP INIT */
+/* -------------------------------------------------------------------------- */
 const app = express();
-const port = process.env.PORT || 5000;
+const PORT = process.env.PORT || 4000; // ✅ local port
 
-// Connect to services
-connectDB();           // MongoDB
-connectCloudinary();   // Cloudinary
+/* -------------------------------------------------------------------------- */
+/* 🔹 CONNECT SERVICES (RUN ONCE) */
+/* -------------------------------------------------------------------------- */
+connectDB();
+connectCloudinary();
 
-// Middlewares
-app.use(cors());
-app.use(express.json());
+/* -------------------------------------------------------------------------- */
+/* 🔹 MIDDLEWARES */
+/* -------------------------------------------------------------------------- */
+app.use(
+  cors({
+    origin: "http://localhost:5173", // ✅ Vite local frontend
+    methods: ["GET", "POST", "PUT", "DELETE"],
+    credentials: true,
+  })
+);
 
-// API routes
+app.use(express.json({ limit: "10mb" }));
+
+/* -------------------------------------------------------------------------- */
+/* 🔹 HEALTH CHECK */
+/* -------------------------------------------------------------------------- */
+app.get("/health", (req, res) => {
+  res.status(200).send("OK");
+});
+
+/* -------------------------------------------------------------------------- */
+/* 🔹 API ROUTES */
+/* -------------------------------------------------------------------------- */
 app.use("/api/user", userRouter);
 app.use("/api/product", productRouter);
 app.use("/api/inquiry", inquiryRouter);
 
-// Default route
+/* -------------------------------------------------------------------------- */
+/* 🔹 ROOT ROUTE */
+/* -------------------------------------------------------------------------- */
 app.get("/", (req, res) => {
-  res.send("API Working");
+  res.send("API Working (Local)");
 });
 
-// Start server
-app.listen(port, () => {
-  console.log("Server started on PORT:", port);
+/* -------------------------------------------------------------------------- */
+/* 🔹 START SERVER */
+/* -------------------------------------------------------------------------- */
+app.listen(PORT, () => {
+  console.log(`🚀 Local server running on http://localhost:${PORT}`);
 });
