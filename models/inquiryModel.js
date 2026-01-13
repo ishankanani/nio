@@ -2,41 +2,37 @@ import mongoose from "mongoose";
 
 const inquirySchema = new mongoose.Schema(
   {
-    name: { type: String, required: true },
-    contact: { type: String, required: true },
-    shopName: { type: String, default: "" },
-
-    message: { type: String },
-    productName: { type: String },
-    productPrice: { type: Number },
-    productLink: { type: String },
-
-    userId: { type: String },
-
-    seen: { type: Boolean, default: false },
+    name: String,
+    contact: String,
+    message: String,
+    productName: String,
+    productPrice: Number,
+    productLink: String,
 
     status: {
       type: String,
-      enum: ["new", "prospect", "followup", "hot", "won", "lost"],
       default: "new",
-      index: true,
+      enum: ["new", "prospect", "followup", "hot", "won", "lost"],
     },
 
-    followUpDate: { type: Date, default: null },
-    note: { type: String, default: "" },
+    followUpDate: {
+      type: Date,
+      default: null,
+    },
 
-    history: [
-      {
-        status: String,
-        note: String,
-        date: { type: Date, default: Date.now },
-      },
-    ],
+    createdBy: {
+      type: mongoose.Schema.Types.ObjectId,
+      ref: "user",
+      default: null,
+    },
+
+    seen: {
+      type: Boolean,
+      default: false,
+    },
   },
   { timestamps: true }
 );
 
-const Inquiry =
-  mongoose.models.inquiry || mongoose.model("inquiry", inquirySchema);
-
-export default Inquiry;
+export default mongoose.models.inquiry ||
+  mongoose.model("inquiry", inquirySchema);
