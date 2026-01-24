@@ -1,14 +1,12 @@
 import express from "express";
 import cors from "cors";
 import dotenv from "dotenv";
-
 import connectDB from "./config/mongodb.js";
 import connectCloudinary from "./config/cloudinary.js";
 
 import userRouter from "./routes/userRoute.js";
 import productRouter from "./routes/productRoute.js";
 import inquiryRouter from "./routes/inquiryRoute.js";
-import watchBuyRoute from "./routes/watchBuyRoute.js";
 
 /* -------------------------------------------------------------------------- */
 /* 🔹 ENV SETUP */
@@ -19,35 +17,34 @@ dotenv.config();
 /* 🔹 APP INIT */
 /* -------------------------------------------------------------------------- */
 const app = express();
-const PORT = process.env.PORT || 4000;
+const PORT = process.env.PORT || 5000;
 
 /* -------------------------------------------------------------------------- */
 /* 🔹 CONNECT SERVICES */
 /* -------------------------------------------------------------------------- */
-connectDB();           // MongoDB
-connectCloudinary();   // Cloudinary
+connectDB();
+connectCloudinary();
 
 /* -------------------------------------------------------------------------- */
-/* 🔹 MIDDLEWARES */
+/* 🔹 ALLOWED ORIGINS (LIVE + LOCAL) */
 /* -------------------------------------------------------------------------- */
-app.use(express.json({ limit: "10mb" }));
+const allowedOrigins = [
+  "https://harifashion.in",
+  "https://www.harifashion.in",
+  "http://localhost:5173",
+  "http://localhost:5174",
+];
 
 /* -------------------------------------------------------------------------- */
-/* 🔹 CORS (LIVE + LOCAL SAFE) */
+/* 🔹 CORS CONFIG (PRODUCTION SAFE) */
 /* -------------------------------------------------------------------------- */
 app.use(
   cors({
     origin: (origin, callback) => {
-      // allow server-to-server & Postman
+      // Allow Postman / server-to-server
       if (!origin) return callback(null, true);
 
-      // Local development
-      if (origin.startsWith("http://localhost:517")) {
-        return callback(null, true);
-      }
-
-      // ✅ LIVE FRONTEND DOMAIN (CHANGE THIS)
-      if (origin === "https://your-frontend-domain.com") {
+      if (allowedOrigins.includes(origin)) {
         return callback(null, true);
       }
 
@@ -59,7 +56,12 @@ app.use(
 );
 
 /* -------------------------------------------------------------------------- */
-/* 🔹 HEALTH CHECK */
+/* 🔹 BODY PARSER */
+/* -------------------------------------------------------------------------- */
+app.use(express.json({ limit: "10mb" }));
+
+/* -------------------------------------------------------------------------- */
+/* 🔹 HEALTH CHECK (VERY IMPORTANT FOR LIVE) */
 /* -------------------------------------------------------------------------- */
 app.get("/health", (req, res) => {
   res.status(200).send("OK");
@@ -71,18 +73,17 @@ app.get("/health", (req, res) => {
 app.use("/api/user", userRouter);
 app.use("/api/product", productRouter);
 app.use("/api/inquiry", inquiryRouter);
-app.use("/api/watch-buy", watchBuyRoute);
 
 /* -------------------------------------------------------------------------- */
-/* 🔹 ROOT ROUTE */
+/* 🔹 ROOT */
 /* -------------------------------------------------------------------------- */
 app.get("/", (req, res) => {
-  res.send("API Working");
+  res.send("API Working (Live)");
 });
 
 /* -------------------------------------------------------------------------- */
 /* 🔹 START SERVER */
 /* -------------------------------------------------------------------------- */
 app.listen(PORT, () => {
-  console.log(`🚀 Server running on port ${PORT}`);
+  console.log(`🚀 Live server running on port ${PORT}`);
 });
