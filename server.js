@@ -7,6 +7,7 @@ import connectCloudinary from "./config/cloudinary.js";
 import userRouter from "./routes/userRoute.js";
 import productRouter from "./routes/productRoute.js";
 import inquiryRouter from "./routes/inquiryRoute.js";
+import watchBuyRoute from "./routes/watchBuyRoute.js";
 
 /* -------------------------------------------------------------------------- */
 /* 🔹 ENV SETUP */
@@ -73,6 +74,7 @@ app.get("/health", (req, res) => {
 app.use("/api/user", userRouter);
 app.use("/api/product", productRouter);
 app.use("/api/inquiry", inquiryRouter);
+app.use("/api/watch-buy", watchBuyRoute);
 
 /* -------------------------------------------------------------------------- */
 /* 🔹 ROOT */
