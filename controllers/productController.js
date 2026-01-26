@@ -1,7 +1,7 @@
-// backend/controllers/productController.js
 import { v2 as cloudinary } from "cloudinary";
 import productModel from "../models/productModel.js";
 import fs from "fs/promises";
+import slugify from "slugify";
 
 /* -------------------------------------------------------------------------- */
 /* 🧠 SIMPLE IN-MEMORY CACHE (FOR LIST PRODUCTS) */
@@ -16,21 +16,20 @@ const CACHE_DURATION = 60 * 1000; // 1 minute
 export const addProduct = async (req, res) => {
   try {
     const {
-  name,
-  description,
-  price,
-  category,
-  subCategory,
-  sizes,
-  bestseller,
-  productCode,
-  colors,
-  fabric,
-  moq,
-} = req.body;
+      name,
+      description,
+      price,
+      category,
+      subCategory,
+      sizes,
+      bestseller,
+      productCode,
+      colors,
+      fabric,
+      moq,
+    } = req.body;
 
     const files = req.files?.images || [];
-
     if (!files.length) {
       return res.json({
         success: false,
@@ -38,7 +37,16 @@ export const addProduct = async (req, res) => {
       });
     }
 
-    // Upload images to Cloudinary
+    // ---------------- SLUG GENERATION ----------------
+    const baseSlug = slugify(name, { lower: true, strict: true });
+    let slug = baseSlug;
+    let count = 1;
+
+    while (await productModel.findOne({ slug })) {
+      slug = `${baseSlug}-${count++}`;
+    }
+
+    // ---------------- IMAGE UPLOAD ----------------
     const imageUrls = await Promise.all(
       files.map(async (file) => {
         const upload = await cloudinary.uploader.upload(file.path);
@@ -50,25 +58,25 @@ export const addProduct = async (req, res) => {
     );
 
     const productData = {
-  name,
-  code: productCode || "",
-  description,
-  price: Number(price),
-  moq: moq || "",
-  category,
-  subCategory,
-  bestseller: bestseller === "true" || bestseller === true,
-  sizes: sizes ? JSON.parse(sizes) : [],
-  colors: colors ? JSON.parse(colors) : [],
-  fabric: fabric ? JSON.parse(fabric) : [],
-  image: imageUrls,
-  date: Date.now(),
-};
+      name,
+      slug,
+      code: productCode || "",
+      description,
+      price: Number(price),
+      moq: moq || "",
+      category,
+      subCategory,
+      bestseller: bestseller === "true" || bestseller === true,
+      sizes: sizes ? JSON.parse(sizes) : [],
+      colors: colors ? JSON.parse(colors) : [],
+      fabric: fabric ? JSON.parse(fabric) : [],
+      image: imageUrls,
+      date: Date.now(),
+    };
 
     const product = new productModel(productData);
     await product.save();
 
-    // 🔄 clear cache after add
     cachedProducts = null;
 
     res.json({
@@ -107,7 +115,22 @@ export const updateProduct = async (req, res) => {
       return res.json({ success: false, message: "Product not found" });
     }
 
-    product.name = name;
+    // 🔁 regenerate slug if name changes
+    if (name && name !== product.name) {
+      const baseSlug = slugify(name, { lower: true, strict: true });
+      let slug = baseSlug;
+      let count = 1;
+
+      while (
+        await productModel.findOne({ slug, _id: { $ne: id } })
+      ) {
+        slug = `${baseSlug}-${count++}`;
+      }
+
+      product.slug = slug;
+      product.name = name;
+    }
+
     product.description = description;
     product.price = Number(price);
     product.category = category;
@@ -119,7 +142,7 @@ export const updateProduct = async (req, res) => {
     product.colors = colors ? JSON.parse(colors) : [];
     product.fabric = fabric ? JSON.parse(fabric) : [];
 
-    // Image update
+    // ---------------- IMAGE UPDATE ----------------
     if (req.files?.images?.length > 0) {
       const imageUrls = await Promise.all(
         req.files.images.map(async (file) => {
@@ -135,8 +158,6 @@ export const updateProduct = async (req, res) => {
     }
 
     await product.save();
-
-    // 🔄 clear cache after update
     cachedProducts = null;
 
     res.json({
@@ -157,7 +178,6 @@ export const listProducts = async (req, res) => {
   try {
     const now = Date.now();
 
-    // ⚡ serve from cache
     if (cachedProducts && now - lastFetchTime < CACHE_DURATION) {
       return res.json({ success: true, products: cachedProducts });
     }
@@ -165,8 +185,8 @@ export const listProducts = async (req, res) => {
     const products = await productModel
       .find({})
       .sort({ date: -1 })
-      .limit(30) // 🔥 VERY IMPORTANT
-      .lean();   // 🔥 VERY FAST
+      .limit(30)
+      .lean();
 
     cachedProducts = products;
     lastFetchTime = now;
@@ -184,10 +204,7 @@ export const listProducts = async (req, res) => {
 export const removeProduct = async (req, res) => {
   try {
     await productModel.findByIdAndDelete(req.body.id);
-
-    // 🔄 clear cache after delete
     cachedProducts = null;
-
     res.json({ success: true, message: "Product Removed" });
   } catch (error) {
     console.error("removeProduct error:", error);
@@ -196,14 +213,38 @@ export const removeProduct = async (req, res) => {
 };
 
 /* -------------------------------------------------------------------------- */
-/* 🟢 SINGLE PRODUCT DETAILS */
+/* 🟢 SINGLE PRODUCT BY ID (OLD – KEEP) */
 /* -------------------------------------------------------------------------- */
 export const singleProduct = async (req, res) => {
   try {
-    const product = await productModel.findById(req.body.productId).lean();
+    const product = await productModel
+      .findById(req.body.productId)
+      .lean();
     res.json({ success: true, product });
   } catch (error) {
     console.error("singleProduct error:", error);
+    res.status(500).json({ success: false, message: "Server error" });
+  }
+};
+
+/* -------------------------------------------------------------------------- */
+/* 🟢 SINGLE PRODUCT BY SLUG (NEW) */
+/* -------------------------------------------------------------------------- */
+export const singleProductBySlug = async (req, res) => {
+  try {
+    const product = await productModel
+      .findOne({ slug: req.params.slug })
+      .lean();
+
+    if (!product) {
+      return res
+        .status(404)
+        .json({ success: false, message: "Product not found" });
+    }
+
+    res.json({ success: true, product });
+  } catch (error) {
+    console.error("singleProductBySlug error:", error);
     res.status(500).json({ success: false, message: "Server error" });
   }
 };
