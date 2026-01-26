@@ -1,4 +1,3 @@
-// backend/routes/productRoute.js
 import express from "express";
 import multer from "multer";
 import path from "path";
@@ -8,7 +7,8 @@ import {
   listProducts,
   removeProduct,
   singleProduct,
-  updateProduct
+  updateProduct,
+  singleProductBySlug,
 } from "../controllers/productController.js";
 
 const router = express.Router();
@@ -25,14 +25,14 @@ const upload = multer({
 // ROUTES
 // ----------------------------------------------------
 
-// Add product (supports multiple images)
+// Add product
 router.post(
   "/add",
   upload.fields([{ name: "images", maxCount: 8 }]),
   addProduct
 );
 
-// Update product (Edit)
+// Update product
 router.put(
   "/update",
   upload.fields([{ name: "images", maxCount: 8 }]),
@@ -42,7 +42,10 @@ router.put(
 // Get all products
 router.get("/list", listProducts);
 
-// Get single product
+// ✅ NEW: Get product by slug
+router.get("/slug/:slug", singleProductBySlug);
+
+// OLD: Get product by ID (keep for backward compatibility)
 router.post("/single", singleProduct);
 
 // Delete product
