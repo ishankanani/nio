@@ -1,24 +1,55 @@
 import mongoose from "mongoose";
 
-const productSchema = new mongoose.Schema({
-  name: { type: String, required: true },
-  code: { type: String }, // new optional code
-  description: { type: String, required: true },
-  price: { type: Number, required: true },
-  moq: { type: String, default: "" }, // new field
-  image: { type: Array, required: true },
-  category: { type: String, required: true },
-  subCategory: { type: String, required: true },
-  sizes: { type: Array, required: true },
-  bestseller: { type: Boolean, default: false },
+const productSchema = new mongoose.Schema(
+  {
+    // ---------------- BASIC INFO ----------------
+    name: { type: String, required: true },
 
-  fabric: { type: [String], default: [] }, // ⭐ MULTIPLE FABRIC
-  colors: { type: [String], default: [] }, // ⭐ MULTIPLE COLORS
+    // ✅ SEO FRIENDLY URL SLUG
+    slug: {
+      type: String,
+      required: true,
+      unique: true,
+      index: true,
+    },
 
-  date: { type: Number, required: true }
-});
+    code: { type: String },
 
-const productModel =
-  mongoose.models.product || mongoose.model("product", productSchema);
+    // ---------------- DETAILS ----------------
+    description: { type: String, required: true },
+    price: { type: Number, required: true },
+    moq: { type: String, default: "" },
 
-export default productModel;
+    // ---------------- MEDIA ----------------
+    image: { type: Array, required: true },
+
+    // ---------------- CATEGORIZATION ----------------
+    category: { type: String, required: true },
+    subCategory: { type: String, required: true },
+
+    // ---------------- OPTIONS ----------------
+    sizes: { type: Array, required: true },
+    fabric: { type: [String], default: [] },
+    colors: { type: [String], default: [] },
+
+    // ---------------- FLAGS ----------------
+    bestseller: { type: Boolean, default: false },
+
+    // ---------------- META ----------------
+    date: { type: Number, required: true },
+  },
+  { timestamps: true }
+);
+
+// 🔥 INDEXES (KEEPING ALL + ADDING SLUG)
+productSchema.index({ slug: 1 });
+productSchema.index({ date: -1 });
+productSchema.index({ category: 1 });
+productSchema.index({ subCategory: 1 });
+productSchema.index({ bestseller: 1 });
+
+// ✅ SAFE DEFAULT EXPORT (prevents overwrite errors in dev)
+const Product =
+  mongoose.models.Product || mongoose.model("Product", productSchema);
+
+export default Product;
