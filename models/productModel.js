@@ -12,6 +12,7 @@ const productSchema = new mongoose.Schema(
     subCategory: { type: String, required: true },
     sizes: { type: Array, required: true },
     bestseller: { type: Boolean, default: false },
+    weight: { type: String, default: "" }, // e.g. "450g", "1.2kg"
     fabric: { type: [String], default: [] },
     colors: { type: [String], default: [] },
     date: { type: Number, required: true },
