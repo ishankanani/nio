@@ -44,7 +44,7 @@ export const addProduct = async (req, res) => {
         const upload = await cloudinary.uploader.upload(file.path);
         try {
           await fs.unlink(file.path);
-        } catch {}
+        } catch { }
         return upload.secure_url;
       })
     );
@@ -61,7 +61,10 @@ export const addProduct = async (req, res) => {
       bestseller: bestseller === "true" || bestseller === true,
       sizes: sizes ? JSON.parse(sizes) : [],
       colors: colors ? JSON.parse(colors) : [],
-      fabric: fabric ? JSON.parse(fabric) : [],
+      fabric: fabric
+        ? JSON.parse(fabric)
+        : { top: [], bottom: [], dupatta: [] },
+
       image: imageUrls,
       date: Date.now(),
     };
@@ -120,7 +123,9 @@ export const updateProduct = async (req, res) => {
     product.bestseller = bestseller === "true" || bestseller === true;
     product.sizes = sizes ? JSON.parse(sizes) : [];
     product.colors = colors ? JSON.parse(colors) : [];
-    product.fabric = fabric ? JSON.parse(fabric) : [];
+    product.fabric = fabric
+      ? JSON.parse(fabric)
+      : { top: [], bottom: [], dupatta: [] };
 
     // Image update (optional)
     if (req.files?.images?.length > 0) {
@@ -129,7 +134,7 @@ export const updateProduct = async (req, res) => {
           const upload = await cloudinary.uploader.upload(file.path);
           try {
             await fs.unlink(file.path);
-          } catch {}
+          } catch { }
           return upload.secure_url;
         })
       );
