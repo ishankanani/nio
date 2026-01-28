@@ -26,7 +26,7 @@ export const addProduct = async (req, res) => {
       colors,
       fabric,
       moq,
-      weight, // ✅ NEW
+      weight,
     } = req.body;
 
     const files = req.files?.images || [];
@@ -38,33 +38,47 @@ export const addProduct = async (req, res) => {
       });
     }
 
-    // Upload images to Cloudinary
+    /* -------------------- UPLOAD IMAGES -------------------- */
     const imageUrls = await Promise.all(
       files.map(async (file) => {
         const upload = await cloudinary.uploader.upload(file.path);
         try {
           await fs.unlink(file.path);
-        } catch { }
+        } catch {}
         return upload.secure_url;
       })
     );
 
+    /* -------------------- SAFE FABRIC PARSE -------------------- */
+    let parsedFabric = { top: [], bottom: [], dupatta: [] };
+
+    try {
+      if (fabric) {
+        const temp = JSON.parse(fabric);
+        parsedFabric = {
+          top: Array.isArray(temp.top) ? temp.top : [],
+          bottom: Array.isArray(temp.bottom) ? temp.bottom : [],
+          dupatta: Array.isArray(temp.dupatta) ? temp.dupatta : [],
+        };
+      }
+    } catch (err) {
+      console.error("Fabric parse error (ADD):", err);
+    }
+
+    /* -------------------- CREATE PRODUCT -------------------- */
     const productData = {
       name,
       code: productCode || "",
       description,
       price: Number(price),
       moq: moq || "",
-      weight: weight || "", // ✅ SAVED
+      weight: weight || "",
       category,
       subCategory,
       bestseller: bestseller === "true" || bestseller === true,
       sizes: sizes ? JSON.parse(sizes) : [],
       colors: colors ? JSON.parse(colors) : [],
-      fabric: fabric
-        ? JSON.parse(fabric)
-        : { top: [], bottom: [], dupatta: [] },
-
+      fabric: parsedFabric,
       image: imageUrls,
       date: Date.now(),
     };
@@ -72,8 +86,7 @@ export const addProduct = async (req, res) => {
     const product = new productModel(productData);
     await product.save();
 
-    // 🔄 clear cache
-    cachedProducts = null;
+    cachedProducts = null; // 🔄 clear cache
 
     res.json({
       success: true,
@@ -104,7 +117,7 @@ export const updateProduct = async (req, res) => {
       colors,
       fabric,
       moq,
-      weight, // ✅ NEW
+      weight,
     } = req.body;
 
     const product = await productModel.findById(id);
@@ -112,6 +125,23 @@ export const updateProduct = async (req, res) => {
       return res.json({ success: false, message: "Product not found" });
     }
 
+    /* -------------------- SAFE FABRIC PARSE -------------------- */
+    let parsedFabric = { top: [], bottom: [], dupatta: [] };
+
+    try {
+      if (fabric) {
+        const temp = JSON.parse(fabric);
+        parsedFabric = {
+          top: Array.isArray(temp.top) ? temp.top : [],
+          bottom: Array.isArray(temp.bottom) ? temp.bottom : [],
+          dupatta: Array.isArray(temp.dupatta) ? temp.dupatta : [],
+        };
+      }
+    } catch (err) {
+      console.error("Fabric parse error (UPDATE):", err);
+    }
+
+    /* -------------------- UPDATE FIELDS -------------------- */
     product.name = name;
     product.description = description;
     product.price = Number(price);
@@ -119,22 +149,20 @@ export const updateProduct = async (req, res) => {
     product.subCategory = subCategory;
     product.code = productCode || "";
     product.moq = moq || "";
-    product.weight = weight || ""; // ✅ UPDATED
+    product.weight = weight || "";
     product.bestseller = bestseller === "true" || bestseller === true;
     product.sizes = sizes ? JSON.parse(sizes) : [];
     product.colors = colors ? JSON.parse(colors) : [];
-    product.fabric = fabric
-      ? JSON.parse(fabric)
-      : { top: [], bottom: [], dupatta: [] };
+    product.fabric = parsedFabric;
 
-    // Image update (optional)
+    /* -------------------- OPTIONAL IMAGE UPDATE -------------------- */
     if (req.files?.images?.length > 0) {
       const imageUrls = await Promise.all(
         req.files.images.map(async (file) => {
           const upload = await cloudinary.uploader.upload(file.path);
           try {
             await fs.unlink(file.path);
-          } catch { }
+          } catch {}
           return upload.secure_url;
         })
       );
@@ -143,9 +171,7 @@ export const updateProduct = async (req, res) => {
     }
 
     await product.save();
-
-    // 🔄 clear cache
-    cachedProducts = null;
+    cachedProducts = null; // 🔄 clear cache
 
     res.json({
       success: true,
@@ -159,7 +185,7 @@ export const updateProduct = async (req, res) => {
 };
 
 /* -------------------------------------------------------------------------- */
-/* 🟢 LIST PRODUCTS (🔥 OPTIMIZED & CACHED) */
+/* 🟢 LIST PRODUCTS (CACHED) */
 /* -------------------------------------------------------------------------- */
 export const listProducts = async (req, res) => {
   try {
@@ -191,9 +217,7 @@ export const listProducts = async (req, res) => {
 export const removeProduct = async (req, res) => {
   try {
     await productModel.findByIdAndDelete(req.body.id);
-
     cachedProducts = null;
-
     res.json({ success: true, message: "Product Removed" });
   } catch (error) {
     console.error("removeProduct error:", error);
@@ -202,7 +226,7 @@ export const removeProduct = async (req, res) => {
 };
 
 /* -------------------------------------------------------------------------- */
-/* 🟢 SINGLE PRODUCT DETAILS */
+/* 🟢 SINGLE PRODUCT */
 /* -------------------------------------------------------------------------- */
 export const singleProduct = async (req, res) => {
   try {
