@@ -28,14 +28,14 @@ const upload = multer({
 // Add product (supports multiple images)
 router.post(
   "/add",
-  upload.fields([{ name: "images", maxCount: 8 }]),
+  upload.fields([{ name: "images", maxCount: 11 }]),
   addProduct
 );
 
 // Update product (Edit)
 router.put(
   "/update",
-  upload.fields([{ name: "images", maxCount: 8 }]),
+  upload.fields([{ name: "images", maxCount: 11 }]),
   updateProduct
 );
 
