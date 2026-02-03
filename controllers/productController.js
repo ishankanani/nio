@@ -189,20 +189,10 @@ export const updateProduct = async (req, res) => {
 /* -------------------------------------------------------------------------- */
 export const listProducts = async (req, res) => {
   try {
-    const now = Date.now();
-
-    if (cachedProducts && now - lastFetchTime < CACHE_DURATION) {
-      return res.json({ success: true, products: cachedProducts });
-    }
-
     const products = await productModel
       .find({})
       .sort({ date: -1 })
-      .limit(30)
       .lean();
-
-    cachedProducts = products;
-    lastFetchTime = now;
 
     res.json({ success: true, products });
   } catch (error) {
@@ -210,6 +200,7 @@ export const listProducts = async (req, res) => {
     res.status(500).json({ success: false, message: "Server error" });
   }
 };
+
 
 /* -------------------------------------------------------------------------- */
 /* 🟢 REMOVE PRODUCT */
