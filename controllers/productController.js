@@ -22,6 +22,7 @@ export const addProduct = async (req, res) => {
       subCategory,
       sizes,
       bestseller,
+      latest, // ✅ NEW
       productCode,
       colors,
       fabric,
@@ -75,10 +76,14 @@ export const addProduct = async (req, res) => {
       weight: weight || "",
       category,
       subCategory,
+
       bestseller: bestseller === "true" || bestseller === true,
+      latest: latest === "true" || latest === true, // ✅ NEW
+
       sizes: sizes ? JSON.parse(sizes) : [],
       colors: colors ? JSON.parse(colors) : [],
       fabric: parsedFabric,
+
       image: imageUrls,
       date: Date.now(),
     };
@@ -86,7 +91,7 @@ export const addProduct = async (req, res) => {
     const product = new productModel(productData);
     await product.save();
 
-    cachedProducts = null; // 🔄 clear cache
+    cachedProducts = null;
 
     res.json({
       success: true,
@@ -113,6 +118,7 @@ export const updateProduct = async (req, res) => {
       subCategory,
       sizes,
       bestseller,
+      latest, // ✅ NEW
       productCode,
       colors,
       fabric,
@@ -147,10 +153,14 @@ export const updateProduct = async (req, res) => {
     product.price = Number(price);
     product.category = category;
     product.subCategory = subCategory;
+
     product.code = productCode || "";
     product.moq = moq || "";
     product.weight = weight || "";
+
     product.bestseller = bestseller === "true" || bestseller === true;
+    product.latest = latest === "true" || latest === true; // ✅ NEW
+
     product.sizes = sizes ? JSON.parse(sizes) : [];
     product.colors = colors ? JSON.parse(colors) : [];
     product.fabric = parsedFabric;
@@ -171,7 +181,8 @@ export const updateProduct = async (req, res) => {
     }
 
     await product.save();
-    cachedProducts = null; // 🔄 clear cache
+
+    cachedProducts = null;
 
     res.json({
       success: true,
@@ -189,10 +200,19 @@ export const updateProduct = async (req, res) => {
 /* -------------------------------------------------------------------------- */
 export const listProducts = async (req, res) => {
   try {
+    const now = Date.now();
+
+    if (cachedProducts && now - lastFetchTime < CACHE_DURATION) {
+      return res.json({ success: true, products: cachedProducts });
+    }
+
     const products = await productModel
       .find({})
       .sort({ date: -1 })
       .lean();
+
+    cachedProducts = products;
+    lastFetchTime = now;
 
     res.json({ success: true, products });
   } catch (error) {
@@ -201,7 +221,6 @@ export const listProducts = async (req, res) => {
   }
 };
 
-
 /* -------------------------------------------------------------------------- */
 /* 🟢 REMOVE PRODUCT */
 /* -------------------------------------------------------------------------- */
@@ -209,6 +228,7 @@ export const removeProduct = async (req, res) => {
   try {
     await productModel.findByIdAndDelete(req.body.id);
     cachedProducts = null;
+
     res.json({ success: true, message: "Product Removed" });
   } catch (error) {
     console.error("removeProduct error:", error);
