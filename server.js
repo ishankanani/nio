@@ -8,7 +8,6 @@ import userRouter from "./routes/userRoute.js";
 import productRouter from "./routes/productRoute.js";
 import inquiryRouter from "./routes/inquiryRoute.js";
 import watchBuyRoute from "./routes/watchBuyRoute.js";
-import utilsRouter from "./routes/utilsRoute.js"; // ✅ added
 
 /* -------------------------------------------------------------------------- */
 /* 🔹 ENV SETUP */
@@ -70,7 +69,6 @@ app.use("/api/user", userRouter);
 app.use("/api/product", productRouter);
 app.use("/api/inquiry", inquiryRouter);
 app.use("/api/watch-buy", watchBuyRoute);
-app.use("/api/utils", utilsRouter); // ✅ added route properly
 
 /* -------------------------------------------------------------------------- */
 /* 🔹 ROOT ROUTE */
