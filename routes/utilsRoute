@@ -5,20 +5,18 @@ const router = express.Router();
 
 router.get("/detect-country", async (req, res) => {
   try {
-    // ✅ With trust proxy enabled, this gives REAL client IP
     const ip = req.ip;
 
-    console.log("Detected Client IP:", ip);
-
+    // Use HTTPS version (important)
     const response = await fetch(
-      `http://ip-api.com/json/${ip}`
+      `https://ipapi.co/${ip}/json/`
     );
 
     const data = await response.json();
 
     res.json({
       success: true,
-      countryCode: data.countryCode || "IN",
+      countryCode: data.country_code || "IN",
     });
 
   } catch (error) {
