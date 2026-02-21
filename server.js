@@ -8,6 +8,7 @@ import userRouter from "./routes/userRoute.js";
 import productRouter from "./routes/productRoute.js";
 import inquiryRouter from "./routes/inquiryRoute.js";
 import watchBuyRoute from "./routes/watchBuyRoute.js";
+import utilsRouter from "./routes/utilsRoute.js"; // ✅ added
 
 /* -------------------------------------------------------------------------- */
 /* 🔹 ENV SETUP */
@@ -18,7 +19,12 @@ dotenv.config();
 /* 🔹 APP INIT */
 /* -------------------------------------------------------------------------- */
 const app = express();
-const PORT = process.env.PORT || 5000;
+const PORT = process.env.PORT || 4000;
+
+/* -------------------------------------------------------------------------- */
+/* 🔹 IMPORTANT FOR RENDER (REAL IP FIX) */
+/* -------------------------------------------------------------------------- */
+app.set("trust proxy", true); // ⭐ THIS FIXES VPN DETECTION
 
 /* -------------------------------------------------------------------------- */
 /* 🔹 CONNECT SERVICES */
@@ -27,25 +33,14 @@ connectDB();
 connectCloudinary();
 
 /* -------------------------------------------------------------------------- */
-/* 🔹 ALLOWED ORIGINS (LIVE + LOCAL) */
-/* -------------------------------------------------------------------------- */
-const allowedOrigins = [
-  "https://harifashion.in",
-  "https://www.harifashion.in",
-  "http://localhost:5173",
-  "http://localhost:5174",
-];
-
-/* -------------------------------------------------------------------------- */
-/* 🔹 CORS CONFIG (PRODUCTION SAFE) */
+/* 🔹 CORS */
 /* -------------------------------------------------------------------------- */
 app.use(
   cors({
     origin: (origin, callback) => {
-      // Allow Postman / server-to-server
       if (!origin) return callback(null, true);
 
-      if (allowedOrigins.includes(origin)) {
+      if (origin.startsWith("http://localhost:517")) {
         return callback(null, true);
       }
 
@@ -62,7 +57,7 @@ app.use(
 app.use(express.json({ limit: "10mb" }));
 
 /* -------------------------------------------------------------------------- */
-/* 🔹 HEALTH CHECK (VERY IMPORTANT FOR LIVE) */
+/* 🔹 HEALTH CHECK */
 /* -------------------------------------------------------------------------- */
 app.get("/health", (req, res) => {
   res.status(200).send("OK");
@@ -75,17 +70,18 @@ app.use("/api/user", userRouter);
 app.use("/api/product", productRouter);
 app.use("/api/inquiry", inquiryRouter);
 app.use("/api/watch-buy", watchBuyRoute);
+app.use("/api/utils", utilsRouter); // ✅ added route properly
 
 /* -------------------------------------------------------------------------- */
-/* 🔹 ROOT */
+/* 🔹 ROOT ROUTE */
 /* -------------------------------------------------------------------------- */
 app.get("/", (req, res) => {
-  res.send("API Working (Live)");
+  res.send("API Working");
 });
 
 /* -------------------------------------------------------------------------- */
 /* 🔹 START SERVER */
 /* -------------------------------------------------------------------------- */
 app.listen(PORT, () => {
-  console.log(`🚀 Live server running on port ${PORT}`);
+  console.log(`🚀 Server running on port ${PORT}`);
 });
