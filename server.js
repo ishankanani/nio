@@ -23,7 +23,7 @@ const PORT = process.env.PORT || 4000;
 /* -------------------------------------------------------------------------- */
 /* 🔹 IMPORTANT FOR RENDER (REAL IP FIX) */
 /* -------------------------------------------------------------------------- */
-app.set("trust proxy", true); // ⭐ THIS FIXES VPN DETECTION
+app.set("trust proxy", 1);
 
 /* -------------------------------------------------------------------------- */
 /* 🔹 CONNECT SERVICES */
@@ -32,17 +32,27 @@ connectDB();
 connectCloudinary();
 
 /* -------------------------------------------------------------------------- */
-/* 🔹 CORS */
+/* 🔹 CORS CONFIGURATION (PRODUCTION READY) */
 /* -------------------------------------------------------------------------- */
+
+const allowedOrigins = [
+  "http://localhost:5173",
+  "http://localhost:3000",
+  "https://nionatrendz.com",
+  "https://www.nionatrendz.com",
+];
+
 app.use(
   cors({
-    origin: (origin, callback) => {
+    origin: function (origin, callback) {
+      // Allow requests with no origin (like Postman or server-to-server)
       if (!origin) return callback(null, true);
 
-      if (origin.startsWith("http://localhost:517")) {
+      if (allowedOrigins.includes(origin)) {
         return callback(null, true);
       }
 
+      console.log("Blocked by CORS:", origin);
       return callback(new Error("Not allowed by CORS"));
     },
     methods: ["GET", "POST", "PUT", "DELETE", "OPTIONS"],
@@ -50,10 +60,14 @@ app.use(
   })
 );
 
+// Handle preflight requests globally
+app.options("*", cors());
+
 /* -------------------------------------------------------------------------- */
 /* 🔹 BODY PARSER */
 /* -------------------------------------------------------------------------- */
 app.use(express.json({ limit: "10mb" }));
+app.use(express.urlencoded({ extended: true }));
 
 /* -------------------------------------------------------------------------- */
 /* 🔹 HEALTH CHECK */
@@ -75,6 +89,18 @@ app.use("/api/watch-buy", watchBuyRoute);
 /* -------------------------------------------------------------------------- */
 app.get("/", (req, res) => {
   res.send("API Working");
+});
+
+/* -------------------------------------------------------------------------- */
+/* 🔹 GLOBAL ERROR HANDLER */
+/* -------------------------------------------------------------------------- */
+app.use((err, req, res, next) => {
+  if (err.message === "Not allowed by CORS") {
+    return res.status(403).json({ message: err.message });
+  }
+
+  console.error(err.stack);
+  res.status(500).json({ message: "Internal Server Error" });
 });
 
 /* -------------------------------------------------------------------------- */
